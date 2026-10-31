@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spark Go Launcher - Carlos</title>
+<style>
+  :root {
+    --bg-main: #050914;
+    --card-bg: #0f172a;
+    --card-accent: #1e293b;
+    --primary: #dc2626;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --ok: #22c55e;
+    --warn: #eab308;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; user-select: none; }
+  body { background-color: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding: 10px 14px; }
+
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 2px 8px 8px; font-size: 13px; color: var(--text-muted); }
+  .car-title-badge { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fff; font-size: 14px; }
+  .red-dot { width: 10px; height: 10px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary); }
+  .pico-badge { padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; color: #fff; }
+
+  .dashboard { display: grid; grid-template-columns: 1.15fr 0.95fr 1.15fr; gap: 12px; flex: 1; min-height: 0; }
+  .card { background: linear-gradient(145deg, #111c35, #090f1d); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.07); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+
+  .car-header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .car-header h2 { font-size: 19px; font-weight: 800; }
+  .car-header p { font-size: 11px; color: var(--text-muted); }
+  .plate-box { background: #facc15; color: #000; font-weight: 900; padding: 2px 8px; border-radius: 5px; border: 2px solid #000; font-size: 12px; letter-spacing: 1px; }
+  
+  .car-img-box { text-align: center; margin: 2px 0; height: 105px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .car-photo { max-height: 100%; max-width: 95%; object-fit: contain; filter: drop-shadow(0 8px 12px rgba(0,0,0,0.7)); }
+
+  .km-box { background: rgba(30, 41, 59, 0.75); padding: 7px 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+  .km-val { font-weight: 800; color: #38bdf8; font-family: monospace; font-size: 16px; }
+
+  .docs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .doc-item { background: rgba(255,255,255,0.03); padding: 8px 10px; border-radius: 10px; border-left: 4px solid var(--ok); cursor: pointer; }
+  .doc-item h4 { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .doc-item .days { font-size: 14px; font-weight: 800; margin: 2px 0; }
+  .doc-item .date { font-size: 10px; color: var(--text-muted); }
+
+  .clock-box { text-align: center; }
+  .clock-time { font-size: 30px; font-weight: 900; letter-spacing: 0.5px; line-height: 1.1; }
+  .clock-date { font-size: 11px; color: var(--text-muted); text-transform: capitalize; margin-top: 2px; }
+
+  .speed-circle { width: 130px; height: 130px; border-radius: 50%; border: 5px solid var(--primary); margin: 4px auto; display: flex; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle, rgba(220,38,38,0.18) 0%, transparent 70%); box-shadow: 0 0 20px rgba(220,38,38,0.25); }
+  .speed-val { font-size: 44px; font-weight: 900; line-height: 1; }
+  .speed-unit { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-top: 3px; font-weight: 700; }
+
+  .nav-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn-action { background: var(--card-accent); border: 1px solid rgba(255,255,255,0.08); color: white; padding: 10px 6px; border-radius: 12px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .btn-action.aa-btn { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+  .btn-action:active { transform: scale(0.95); }
+
+  .media-source-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .tab { text-align: center; padding: 8px 4px; font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.05); border-radius: 9px; cursor: pointer; border: 1px solid transparent; }
+  .tab.active { background: var(--primary); color: #fff; box-shadow: 0 2px 10px rgba(220,38,38,0.4); }
+
+  .track-info { text-align: center; margin: auto 0; padding: 8px 4px; background: rgba(0,0,0,0.25); border-radius: 12px; }
+  .music-icon { font-size: 28px; margin-bottom: 4px; }
+  .track-title { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; }
+  .track-artist { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+  .media-controls { display: flex; justify-content: center; align-items: center; gap: 16px; }
+  .btn-ctrl { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--card-accent); color: white; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .btn-play { width: 54px; height: 54px; background: var(--primary); color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+  .btn-ctrl:active { transform: scale(0.92); }
+
+  .bottom-dock { height: 46px; background: #0f172a; border-radius: 14px; margin-top: 8px; display: flex; justify-content: space-around; align-items: center; padding: 0 10px; border: 1px solid rgba(255,255,255,0.07); }
+  .dock-item { color: #cbd5e1; font-size: 12px; font-weight: 700; cursor: pointer; padding: 7px 12px; border-radius: 9px; display: flex; align-items: center; gap: 6px; }
+  .dock-item:active { background: var(--primary); color: #fff; }
+
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; z-index: 100; }
+  .modal-content { background: #1e293b; padding: 18px; border-radius: 16px; width: 340px; border: 1px solid rgba(255,255,255,0.15); }
+  .modal-content h3 { margin-bottom: 12px; font-size: 16px; color: #fff; }
+  .form-group { margin-bottom: 10px; }
+  .form-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
+  .form-group input { width: 100%; padding: 7px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 14px; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
+  .modal-btns button { flex: 1; padding: 9px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; }
+  .btn-save { background: var(--ok); color: #000; }
+  .btn-close { background: #475569; color: #fff; }
+</style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="car-title-badge">
+      <span class="red-dot"></span> Chevrolet Spark Go 1.0L
+    </div>
+    <div id="pico-placa-status" class="pico-badge">Verificando Pico y Placa...</div>
+  </div>
+
+  <div class="dashboard">
+    
+    <div class="card">
+      <div class="car-header">
+        <div>
+          <h2>Hola, Carlos</h2>
+          <p>Estado del vehículo al día</p>
+        </div>
+        <div class="plate-box" id="plate-badge">••• ••0</div>
+      </div>
+      
+      <div class="car-img-box">
+        <img src="spark_rojo.png" class="car-photo" alt="Spark Go Rojo">
+      </div>
+
+      <div class="km-box" onclick="abrirAjustes()">
+        <span>Odómetro actual:</span>
+        <span class="km-val" id="odometer">162.157 km</span>
+      </div>
+
+      <div class="docs-grid">
+        <div class="doc-item" id="soat-card" onclick="abrirAjustes()">
+          <h4>SOAT</h4>
+          <div class="days" id="soat-days">-- días</div>
+          <div class="date" id="soat-date">28/08/2027</div>
+        </div>
+        <div class="doc-item" id="tecno-card" onclick="abrirAjustes()">
+          <h4>Tecnomecánica</h4>
+          <div class="days" id="tecno-days">-- días</div>
+          <div class="date" id="tecno-date">29/08/2027</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="clock-box">
+        <div class="clock-time" id="clock">00:00</div>
+        <div class="clock-date" id="date">Cargando...</div>
+      </div>
+
+      <div class="speed-circle">
+        <div class="speed-val" id="speed">0</div>
+        <div class="speed-unit">km/h</div>
+      </div>
+
+      <div class="nav-buttons">
+        <button class="btn-action" onclick="abrirAppNativa('Maps')">📍 Maps</button>
+        <button class="btn-action aa-btn" onclick="abrirAppNativa('AndroidAuto')">🚘 Android Auto</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="media-source-tabs">
+        <div class="tab active" onclick="cambiarFuente(this, 'BT música', 'Audio Bluetooth')">🎵 BT Música</div>
+        <div class="tab" onclick="cambiarFuente(this, 'Música', 'Memoria USB')">🔌 USB Música</div>
+        <div class="tab" onclick="cambiarFuente(this, 'Radio', 'Sintonizador FM')">📻 Radio FM</div>
+      </div>
+
+      <div class="track-info">
+        <div class="music-icon" id="source-icon">🎶</div>
+        <div class="track-title" id="track-title">Listo para reproducir</div>
+        <div class="track-artist" id="track-artist">BT música • Spark Go</div>
+      </div>
+
+      <div class="media-controls">
+        <button class="btn-ctrl" onclick="comandoMultimedia('prev')">⏮</button>
+        <button class="btn-ctrl btn-play" id="play-btn" onclick="comandoMultimedia('play')">▶</button>
+        <button class="btn-ctrl" onclick="comandoMultimedia('next')">⏭</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-dock">
+    <div class="dock-item" onclick="abrirAppNativa('Llamada BT')">📞 Llamada BT</div>
+    <div class="dock-item" onclick="abrirAppNativa('Ecualizador')">🎚️ Sonido EQ</div>
+    <div class="dock-item" onclick="abrirAppNativa('Admin. de archivos')">📁 Archivos USB</div>
+    <div class="dock-item" onclick="abrirAppNativa('Video')">🎬 Video</div>
+    <div class="dock-item" onclick="abrirAjustes()">⚙️ Datos Carro</div>
+  </div>
+
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <h3>⚙️ Actualizar Datos del Spark Go</h3>
+      <div class="form-group">
+        <label>Kilometraje Actual (km):</label>
+        <input type="number" id="input-km" step="1">
+      </div>
+      <div class="form-group">
+        <label>Vencimiento SOAT:</label>
+        <input type="date" id="input-soat">
+      </div>
+      <div class="form-group">
+        <label>Vencimiento Tecnomecánica:</label>
+        <input type="date" id="input-tecno">
+      </div>
+      <div class="modal-btns">
+        <button class="btn-close" onclick="cerrarAjustes()">Cancelar</button>
+        <button class="btn-save" onclick="guardarAjustes()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let datosCarro = {
+    ultimoDigitoPlaca: 0,
+    kilometraje: parseFloat(localStorage.getItem('spark_km')) || 162157,
+    vencimientoSOAT: localStorage.getItem('spark_soat') || "2027-08-28",
+    vencimientoTecno: localStorage.getItem('spark_tecno') || "2027-08-29"
+  };
+
+  function renderizarDatosCarro() {
+    document.getElementById('odometer').innerText = Math.floor(datosCarro.kilometraje).toLocaleString('es-CO') + " km";
+    calcularDiasRestantes(datosCarro.vencimientoSOAT, 'soat-days', 'soat-date', 'soat-card');
+    calcularDiasRestantes(datosCarro.vencimientoTecno, 'tecno-days', 'tecno-date', 'tecno-card');
+  }
+
+  function actualizarRelojYPico() {
+    const ahora = new Date();
+    document.getElementById('clock').innerText = ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+    document.getElementById('date').innerText = ahora.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+
+    const diaMes = ahora.getDate();
+    const diaSemana = ahora.getDay();
+    const badge = document.getElementById('pico-placa-status');
+    const esPlacaImpar = [1, 2, 3, 4, 5].includes(datosCarro.ultimoDigitoPlaca);
+
+    if (diaSemana === 0 || diaSemana === 6) {
+      badge.style.background = "var(--ok)";
+      badge.innerText = "🟢 Fin de Semana • Sin Pico y Placa";
+    } else {
+      const libreHoy = (diaMes % 2 === 0 && !esPlacaImpar) || (diaMes % 2 === 1 && esPlacaImpar);
+      if (libreHoy) {
+        badge.style.background = "var(--ok)";
+        badge.innerText = "🟢 Placa #0 • Libre para circular hoy";
+      } else {
+        badge.style.background = "var(--danger)";
+        badge.innerText = "🔴 HOY TIENES PICO Y PLACA (6:00 a.m. - 9:00 p.m.)";
+      }
+    }
+  }
+
+  function calcularDiasRestantes(fechaStr, idDays, idDate, idCard) {
+    const hoy = new Date();
+    hoy.setHours(0,0,0,0);
+    const vence = new Date(fechaStr + "T00:00:00");
+    const dias = Math.round((vence - hoy) / (1000 * 60 * 60 * 24));
+    
+    const elDays = document.getElementById(idDays);
+    const elCard = document.getElementById(idCard);
+    const partes = fechaStr.split('-');
+    document.getElementById(idDate).innerText = `Vence: ${partes[2]}/${partes[1]}/${partes[0]}`;
+
+    if (dias < 0) {
+      elDays.innerText = "VENCIDO";
+      elDays.style.color = "var(--danger)";
+      elCard.style.borderLeftColor = "var(--danger)";
+    } else {
+      elDays.innerText = `Faltan ${dias} días`;
+      elDays.style.color = dias <= 15 ? "var(--danger)" : (dias <= 30 ? "var(--warn)" : "#fff");
+      elCard.style.borderLeftColor = dias <= 15 ? "var(--danger)" : (dias <= 30 ? "var(--warn)" : "var(--ok)");
+    }
+  }
+
+  function cambiarFuente(tabEl, nombreApp, subtitulo) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    document.getElementById('track-artist').innerText = subtitulo;
+    abrirAppNativa(nombreApp);
+  }
+
+  function abrirAppNativa(nombreApp) {
+    if (window.AndroidBridge) {
+      window.AndroidBridge.launchByLabel(nombreApp);
+    } else {
+      console.log("Abriendo en el radio: " + nombreApp);
+    }
+  }
+
+  let reproduciendo = false;
+  function comandoMultimedia(accion) {
+    if (accion === 'play') {
+      reproduciendo = !reproduciendo;
+      document.getElementById('play-btn').innerText = reproduciendo ? '⏸' : '▶';
+    }
+    if (window.AndroidBridge) {
+      window.AndroidBridge.mediaControl(accion);
+    }
+  }
+
+  window.actualizarVelocidadGPS = function(kmh, metrosAvanzados) {
+    document.getElementById('speed').innerText = Math.round(kmh);
+    if (metrosAvanzados > 0) {
+      datosCarro.kilometraje += (metrosAvanzados / 1000.0);
+      localStorage.setItem('spark_km', datosCarro.kilometraje.toFixed(2));
+      document.getElementById('odometer').innerText = Math.floor(datosCarro.kilometraje).toLocaleString('es-CO') + " km";
+    }
+  };
+
+  window.actualizarCancion = function(titulo, artista) {
+    if (titulo) document.getElementById('track-title').innerText = titulo;
+    if (artista) document.getElementById('track-artist').innerText = artista;
+  };
+
+  function abrirAjustes() {
+    document.getElementById('input-km').value = Math.floor(datosCarro.kilometraje);
+    document.getElementById('input-soat').value = datosCarro.vencimientoSOAT;
+    document.getElementById('input-tecno').value = datosCarro.vencimientoTecno;
+    document.getElementById('settings-modal').style.display = 'flex';
+  }
+  function cerrarAjustes() {
+    document.getElementById('settings-modal').style.display = 'none';
+  }
+  function guardarAjustes() {
+    datosCarro.kilometraje = parseFloat(document.getElementById('input-km').value) || datosCarro.kilometraje;
+    datosCarro.vencimientoSOAT = document.getElementById('input-soat').value || datosCarro.vencimientoSOAT;
+    datosCarro.vencimientoTecno = document.getElementById('input-tecno').value || datosCarro.vencimientoTecno;
+    localStorage.setItem('spark_km', datosCarro.kilometraje);
+    localStorage.setItem('spark_soat', datosCarro.vencimientoSOAT);
+    localStorage.setItem('spark_tecno', datosCarro.vencimientoTecno);
+    renderizarDatosCarro();
+    cerrarAjustes();
+  }
+
+  setInterval(actualizarRelojYPico, 1000);
+  actualizarRelojYPico();
+  renderizarDatosCarro();
+</script>
+</body>
+</html>
